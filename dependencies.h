@@ -1,3 +1,8 @@
+#include <unistd.h>
+#include <termios.h>
+#include <stdlib.h>
+#include <ctype.h>
+#include <stdio.h>
 /*
 Disable raw Mode and restore terminal's original attributes when our program exits.
 */
