@@ -3,6 +3,9 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <stdio.h>
+
+// Use Ctrl-Q to quit
+#define CTRL_KEY(k) ((k) & 0x1f)
 /*
 Disable raw Mode and restore terminal's original attributes when our program exits.
 */
@@ -32,4 +35,53 @@ void enableRawMode() {
   raw.c_cc[VMIN] = 0;
   raw.c_cc[VTIME] = 1;
   if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw) == -1) die("tcsetattr");
+}
+
+// Refactor keyboard input
+
+/*
+This function for one keypress, and return it.
+*/
+char editorReadKey()
+{
+  int nread;
+  char c;
+  while((nread = read(STDIN_FILENO, &c, 1)) != 1)
+  {
+    if (nread == -1 && errno != EAGAIN) die("read");
+
+  }
+  return c;
+}
+
+
+/*
+This Function waits for a keypress, and then handles it
+*/
+void editorProcessKeypress()
+{
+  char c = editorReadKey();
+
+  switch (c)
+  {
+    case CTRL_KEY('q'):
+      exit(0);
+      break;
+  }
+}
+
+// Clear the screen
+
+void editorRefreshScreen() {
+  write(STDOUT_FILENO, "\x1b[2J", 4);
+  write(STDOUT_FILENO, "\x1b[2J", 4);
+  write(STDOUT_FILENO, "\x1b[H", 3);
+
+  /*
+  We got 4 bytes in our function
+  The first byte is \x1b is the escape character, or 27 in decimal.
+  The other bytes rae [2J
+  J command Erase in display
+  It say to clear the entire screen
+  */
 }

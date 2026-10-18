@@ -61,3 +61,9 @@ ECHO, ICANON, and ISIG Are terminal settings used with termios API to control ho
 - IXON: Control software flow control: whether the terminal interprets certain keyboard characters as commands to pause and resume output. - Ctrl+S pauses terminal output. Ctrl+Q resumes terminal output.
 
 => These flags are bits in the c_lflag field of a struct termios. They are enabled or disabled using bitwise operations.
+
+
+# Raw input and output
+
+The CTRL_KEY macro bitwise-AND a character with value 00011111, in binary.
+
