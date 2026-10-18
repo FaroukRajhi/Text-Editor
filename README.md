@@ -52,3 +52,12 @@ iscntrl() tests whether a character is a control character.
 Control characters are nonprintable characters that we don't want to print to the screen.
 
 ISIG as Ctrl-C can be read as a 3 byte and ctrl-z can be read as a 26 byte.
+
+ECHO, ICANON, and ISIG Are terminal settings used with termios API to control how the terminal heandles kayboard input.
+
+- ECHO: Display typed characters: controls whether characters we type are shown on the terminal.
+- ICANON - Line-by-line input: Controls whether input is collected into a line until Enter is pressed.
+- ISIG - Terminal signal characters: Controls whether special keys such as Ctrl+C generate signals like SIGINT.
+- IXON: Control software flow control: whether the terminal interprets certain keyboard characters as commands to pause and resume output. - Ctrl+S pauses terminal output. Ctrl+Q resumes terminal output.
+
+=> These flags are bits in the c_lflag field of a struct termios. They are enabled or disabled using bitwise operations.
