@@ -6,6 +6,10 @@
 
 
 struct editorConfig {
+  
+  int screenRows;
+  int screenCols;
+
   struct termios orig_termios;
 };
 struct editorConfig E;
@@ -36,14 +40,14 @@ void disableRawMode() {
 Drawing a column of tildes(~) on
 The left handside of the screen like vim does.
 */
-void editorDrawRows()
-{
+void editorDrawRows() {
   int y;
-  for(y = 0; y < 24; y++)
-  {
-    write(STDOUT_FILENO, "~\r\n", 3);
+  for (y = 0; y < E.screenRows; y++) {
+    write(STDOUT_FILENO, "~", 1);
+    if (y < E.screenRows - 1) {
+      write(STDOUT_FILENO, "\r\n", 2);
+    }
   }
-  
 }
 
 
@@ -78,7 +82,48 @@ char editorReadKey()
   return c;
 }
 
-/* Set window size, the easy way*/
+int getCursorPosition(int *rows, int *cols) {
+  char buf[32];
+  unsigned int i = 0;
+  if (write(STDOUT_FILENO, "\x1b[6n", 4) != 4) return -1;
+  while (i < sizeof(buf) - 1) {
+    if (read(STDIN_FILENO, &buf[i], 1) != 1) break;
+    if (buf[i] == 'R') break;
+    i++;
+  }
+  buf[i] = '\0';
+  if (buf[0] != '\x1b' || buf[1] != '[') return -1;
+  if (sscanf(&buf[2], "%d;%d", rows, cols) != 2) return -1;
+  return 0;
+}
+
+/* Set window size, the easy way.
+ calling ioctl() with the TIOCGWINSZ request.
+
+ IOCTL stands for Input/Output/Control : get window size
+*/
+ 
+
+int getWindowSize(int *rows, int *cols) {
+  struct winsize ws;
+  if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) == -1 || ws.ws_col == 0) {
+    if (write(STDOUT_FILENO, "\x1b[999C\x1b[999B", 12) != 12) return -1;
+    return getCursorPosition(rows, cols);
+  } else {
+    *cols = ws.ws_col;
+    *rows = ws.ws_row;
+    return 0;
+  }
+}
+
+/* Append buffer*/
+
+struct abuf {
+  char *b;
+  int len;
+};
+
+#define ABUF_INIT {NULL, 0}
 
 
 /*
@@ -116,3 +161,9 @@ void editorRefreshScreen() {
   */
 }
 
+
+/* Initialize all the fields in the E struct.*/
+void initEditor()
+{
+  if(getWindowSize(&E.screenRows, &E.screenCols) == -1) die("getWindowSize");
+}

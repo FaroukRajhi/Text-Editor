@@ -4,6 +4,7 @@
 #include <ctype.h>
 #include <stdio.h>
 #include <errno.h>
+#include <sys/ioctl.h>
 #include "dependencies.h"
 
 
@@ -15,8 +16,11 @@ int main()
     
 
     while(1)
-    editorRefreshScreen();
-    editorProcessKeypress();
+    {
+        editorRefreshScreen();
+        editorProcessKeypress();
+    }
+    
 
     return 0;
 }
