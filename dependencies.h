@@ -4,6 +4,12 @@
 #include <ctype.h>
 #include <stdio.h>
 
+
+struct editorConfig {
+  struct termios orig_termios;
+};
+struct editorConfig E;
+
 // Use Ctrl-Q to quit
 #define CTRL_KEY(k) ((k) & 0x1f)
 /*
@@ -12,6 +18,9 @@ Disable raw Mode and restore terminal's original attributes when our program exi
 struct termios orig_termios;
 
 void die(const char *s) {
+  // Clear the screen on exit 
+  write(STDOUT_FILENO, "\x1b[2J", 4);
+  write(STDOUT_FILENO, "\x1b[H", 3);
   perror(s);
   exit(1);
 }
@@ -19,15 +28,29 @@ void die(const char *s) {
 // Set terminal to original configs (Default)
 
 void disableRawMode() {
-  if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &orig_termios) == -1)
+  if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &E.orig_termios) == -1)
     die("tcsetattr");
+}
+
+/*
+Drawing a column of tildes(~) on
+The left handside of the screen like vim does.
+*/
+void editorDrawRows()
+{
+  int y;
+  for(y = 0; y < 24; y++)
+  {
+    write(STDOUT_FILENO, "~\r\n", 3);
+  }
+  
 }
 
 
 void enableRawMode() {
-  if (tcgetattr(STDIN_FILENO, &orig_termios) == -1) die("tcgetattr");
+  if (tcgetattr(STDIN_FILENO, &E.orig_termios) == -1) die("tcgetattr");
   atexit(disableRawMode);
-  struct termios raw = orig_termios;
+  struct termios raw = E.orig_termios;
   raw.c_iflag &= ~(BRKINT | ICRNL | INPCK | ISTRIP | IXON);
   raw.c_oflag &= ~(OPOST);
   raw.c_cflag |= (CS8);
@@ -36,6 +59,7 @@ void enableRawMode() {
   raw.c_cc[VTIME] = 1;
   if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw) == -1) die("tcsetattr");
 }
+
 
 // Refactor keyboard input
 
@@ -54,6 +78,8 @@ char editorReadKey()
   return c;
 }
 
+/* Set window size, the easy way*/
+
 
 /*
 This Function waits for a keypress, and then handles it
@@ -65,6 +91,8 @@ void editorProcessKeypress()
   switch (c)
   {
     case CTRL_KEY('q'):
+      write(STDOUT_FILENO, "\x1b[2J", 4);
+      write(STDOUT_FILENO, "\x1b[H", 3);
       exit(0);
       break;
   }
@@ -74,7 +102,9 @@ void editorProcessKeypress()
 
 void editorRefreshScreen() {
   write(STDOUT_FILENO, "\x1b[2J", 4);
-  write(STDOUT_FILENO, "\x1b[2J", 4);
+  write(STDOUT_FILENO, "\x1b[H", 3);
+
+  editorDrawRows();
   write(STDOUT_FILENO, "\x1b[H", 3);
 
   /*
@@ -85,3 +115,4 @@ void editorRefreshScreen() {
   It say to clear the entire screen
   */
 }
+
