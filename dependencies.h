@@ -52,7 +52,7 @@ void editorDrawRows() {
 
 
 void enableRawMode() {
-  if (tcgetattr(STDIN_FILENO, &E.orig_termios) == -1) die("tcgetattr");
+  if (tcgetattr(STDIN_FILENO, &E.orig_termios) == -1) die("tcgetattr Error");
   atexit(disableRawMode);
   struct termios raw = E.orig_termios;
   raw.c_iflag &= ~(BRKINT | ICRNL | INPCK | ISTRIP | IXON);
@@ -76,7 +76,7 @@ char editorReadKey()
   char c;
   while((nread = read(STDIN_FILENO, &c, 1)) != 1)
   {
-    if (nread == -1 && errno != EAGAIN) die("read");
+    if (nread == -1 && errno != EAGAIN) die("reading error");
 
   }
   return c;
@@ -166,4 +166,13 @@ void editorRefreshScreen() {
 void initEditor()
 {
   if(getWindowSize(&E.screenRows, &E.screenCols) == -1) die("getWindowSize");
+}
+
+void abAppend(struct abuf *ab, const char *s, int len)
+{
+  char *new = realloc(ab->b, ab->len + len);
+
+  if (new == NULL) return;
+
+  memcpy()
 }
