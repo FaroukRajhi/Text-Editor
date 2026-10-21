@@ -47,7 +47,7 @@ struct editorConfig {
     int screenrows;
     int screencols;
     int numrows;
-    erow row;
+    erow *row;
     struct termios orig_termios;
 };
 
@@ -205,7 +205,7 @@ void editorDrawRows(struct abuf *ab) {
   int y;
   for (y = 0; y < E.screenrows; y++) {
     if (y >= E.numrows) {
-      if (y == E.screenrows / 3) {
+      if (E.numrows == 0 && y == E.screenrows / 3) {
         char welcome[80];
         int welcomelen = snprintf(welcome, sizeof(welcome),
           "Kilo editor -- version %s", KILO_VERSION);
@@ -359,20 +359,29 @@ int getWindowSize(int *rows, int *cols)
     return 0;
 }
 
-void editorOpen()
-{
-    char *line = "Hello Folks";
-    ssize_t linelen = 12;
-
+void editorOpen(char *filename) {
+  FILE *fp = fopen(filename, "r");
+  if (!fp) die("fopen");
+  char *line = NULL;
+  size_t linecap = 0;
+  ssize_t linelen;
+  linelen = getline(&line, &linecap, fp);
+  if (linelen != -1) {
+    while (linelen > 0 && (line[linelen - 1] == '\n' ||
+                           line[linelen - 1] == '\r'))
+      linelen--;
     E.row.size = linelen;
     E.row.chars = malloc(linelen + 1);
     memcpy(E.row.chars, line, linelen);
     E.row.chars[linelen] = '\0';
     E.numrows = 1;
+  }
+  free(line);
+  fclose(fp);
 }
 
 /* =========================
-   Keypress handling
+   handling Keypress 
    ========================= */
 
 void editorProcessKeypress(void)
@@ -455,6 +464,7 @@ void initEditor()
     E.cx = 0;
     E.cy = 0;
     E.numrows;
+    E.row = NULL;
 
     if (getWindowSize(&E.screenrows, &E.screencols) == -1) {
         die("getWindowSize");
